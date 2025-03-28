@@ -31,7 +31,6 @@ var ignoredDirs = map[string]bool{
 	".vscode":      true,
 	".idea":        true,
 	"bin":          true,
-	"obj":          true,
 	"node_modules": true,
 }
 
@@ -45,12 +44,11 @@ type PathInfo struct {
 type RenamedItem struct {
 	OldPath string
 	NewPath string
-	// IsDir is implicitly known by the category key ("Directory" vs file extension)
 }
 
 // Struct to hold all changes for a specific file type/category
 type ChangeReport struct {
-	Category       string   // e.g., ".cs", ".csproj", "Dockerfile", "Directory"
+	Category       string   // ".cs", ".csproj", "Dockerfile", "Directory"
 	ContentUpdates []string // List of ORIGINAL paths whose content was updated
 	Renames        []RenamedItem
 }
@@ -124,7 +122,7 @@ func main() {
 	}
 
 	// --- Pass 1: Update content and collect paths to rename ---
-	fmt.Println("\n--- Passo 1: Analizar ficheiros e substituir conteúdo ---")
+	fmt.Println("\n--- Passo 1: Analisar ficheiros e substituir conteúdo ---")
 	renamedCount := 0
 	walkFunc := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -132,11 +130,9 @@ func main() {
 			return err
 		}
 
-		// --- !! VERIFICAÇÃO PARA IGNORAR DIRETÓRIOS ADICIONADA !! ---
 		if d.IsDir() { // Verifica se é um diretório
 			dirName := d.Name()
 			if ignoredDirs[dirName] { // Verifica se o nome está no mapa de ignorados
-				// fmt.Printf("Skipping directory: %s\n", path) // Mensagem opcional de debug/info
 				return filepath.SkipDir // Instrução para NÃO entrar neste diretório
 			}
 		}
