@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -23,10 +24,7 @@ var processableExtensions = map[string]bool{
 	".csproj": true,
 	".cs":     true,
 	".json":   true,
-	// Add other extensions if needed
 }
-
-// --- Structs for collecting and reporting results ---
 
 // Struct to hold path information for sorting before rename (Pass 1 -> Pass 2)
 type PathInfo struct {
@@ -83,15 +81,33 @@ func main() {
 	}
 
 	fmt.Printf("Starting process in directory: %s\n", rootDir)
-	fmt.Printf("Replacing all occurrences of '%s' with '%s'\n", *oldName, *newName)
-	fmt.Println("--- IMPORTANT: Make sure you have a backup or are using version control! ---")
+	fmt.Printf("Replacing occurrences of '%s' with '%s'\n", *oldName, *newName)
 
-	// --- Data structures to collect results ---
+	// --- !! BLOCO DE CONFIRMAÇÃO ADICIONADO !! ---
+	fmt.Println("\n------------------------------------ ATENÇÃO ------------------------------------")
+	fmt.Println("Este processo modifica arquivos, nomes de pastas e conteúdo DIRETAMENTE.")
+	fmt.Println("Garanta que você possui um BACKUP ou está usando controle de versão (Git)")
+	fmt.Println("antes de continuar. As alterações podem ser difíceis de reverter manualmente.")
+	fmt.Println("---------------------------------------------------------------------------------")
+	fmt.Print("Você tem certeza que deseja continuar? (Digite S ou Y para confirmar): ")
+
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatalf("Erro ao ler a confirmação do usuário: %v", err)
+	}
+
+	// Limpa espaços em branco (incluindo \n) e converte para maiúsculas
+	confirmation := strings.ToUpper(strings.TrimSpace(input))
+
+	if confirmation != "S" && confirmation != "Y" {
+		fmt.Println("\nProcesso abortado pelo usuário.")
+		os.Exit(0)
+	}
+
 	pathsToRename := []PathInfo{}
-	// Map key: category string, Value: report struct for that category
 	changesByType := make(map[string]*ChangeReport)
 
-	// Helper function to ensure report struct exists for a category
 	ensureReportExists := func(categoryKey string) *ChangeReport {
 		if _, ok := changesByType[categoryKey]; !ok {
 			changesByType[categoryKey] = &ChangeReport{Category: categoryKey}
@@ -265,6 +281,7 @@ func main() {
 	}
 
 	fmt.Printf("\n--- Process Complete ---\n")
-	fmt.Printf("Total items renamed: %d\n", renamedCount) // Keep total count for reference
+	fmt.Printf("Total items renamed: %d\n", renamedCount)
 	fmt.Println("Please review the changes carefully and test your project.")
+
 }
