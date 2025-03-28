@@ -2,7 +2,7 @@
 
 ## 1. Introdução
 
-A ferramenta `renamer` foi criada para simplificar e automatizar o processo de configuração inicial de um novo projeto baseado em um template C#. Ela renomeia pastas, arquivos (incluindo `.sln` e `.csproj`), e substitui ocorrências de texto (como namespaces e referências) dentro dos arquivos, tudo com base nos parâmetros inseridos.
+A ferramenta `irn-renamer` foi criada para simplificar e automatizar o processo de configuração inicial de um novo projeto baseado em um template C#. Ela renomeia pastas, arquivos (incluindo `.sln` e `.csproj`), e substitui ocorrências de texto (como namespaces e referências) dentro dos arquivos, tudo com base nos parâmetros inseridos.
 
 **Público:** Ferramenta exclusiva para desenvolvedores do IRN que utilizam projetos C# base.
 
@@ -40,8 +40,7 @@ Esta pasta servirá como um local central para suas ferramentas de linha de coma
 
 1.  Localize o arquivo que você baixou (ex: `irn-renamer.exe`) na sua pasta `Downloads`.
 2.  **Mova** este arquivo para dentro da pasta `C:\tools`.
-3.  Dentro de `C:\tools`, **renomeie** o arquivo de `renamer_windows_amd64.exe` para simplesmente **`irn-renamer.exe`**.
-![Screenshot 2025-03-28 173558](https://github.com/user-attachments/assets/a8ed2446-375f-443b-9b6e-b86f9ce7e616)
+![image](https://github.com/user-attachments/assets/a19323aa-f2f5-4ab6-8399-3e8b90064a3c)
 
 ### 3.3. Adicionar `C:\tools` às Variáveis de Ambiente (PATH)
 
@@ -55,12 +54,12 @@ Isso permite que o Windows encontre o `irn-renamer.exe` quando você digitar o c
 3.  Na seção superior ("Variáveis de usuário para [seu usuário]"), localize e selecione a variável `Path`. Clique em **"Editar..."**. (Se a variável `Path` não existir, clique em "Novo..." para criá-la primeiro).
 ![Screenshot 2025-03-28 171950](https://github.com/user-attachments/assets/25c7bc0c-d609-4057-ac5c-67a1505d13de)
 
-5.  Na janela "Editar a variável de ambiente", clique em **"Novo"** ou **"Procurar"**.
+4.  Na janela "Editar a variável de ambiente", clique em **"Novo"** ou **"Procurar"**.
  - Se clicar em **"Novo"**, digite `C:\tools` na nova linha que apareceu e pressione Enter.
  - Se clicar em **"Procurar"**, selecione o diretório que que acabou de criar: Ex: C:/tools.
 ![Screenshot 2025-03-28 172048](https://github.com/user-attachments/assets/90c60b10-4a99-4c08-8eae-da8676b61124)
 
-6.  Clique em **"OK"** em todas as janelas abertas ("Editar a variável de ambiente", "Variáveis de Ambiente", "Propriedades do Sistema") para salvar as alterações.
+5.  Clique em **"OK"** em todas as janelas abertas ("Editar a variável de ambiente", "Variáveis de Ambiente", "Propriedades do Sistema") para salvar as alterações.
 
 ### 3.4. Verificação
 
@@ -79,7 +78,7 @@ Isso permite que o Windows encontre o `irn-renamer.exe` quando você digitar o c
 
 2.  **Execute o Comando:** Use o comando `irn-renamer` com as flags `-old` e `-new`, especificando o nome que será substituído no parâmetro -old e o novo nome desejado no parâmetro -new.
     ```bash
-    irn-renamer -old NomeParaSubstituir" -new NomeNovo
+    irn-renamer -old NomeParaSubstituir -new NomeNovo
     ```
     * Substitua `"NomeParaSubstituir"` pelo nome usado no seu template (ex: "Company.Template.Service").
     * Substitua `"NomeNovo"` pelo nome desejado para este novo projeto (ex: "Company.Customer.Service").
@@ -92,7 +91,7 @@ Isso permite que o Windows encontre o `irn-renamer.exe` quando você digitar o c
 ![Screenshot 2025-03-28 173400](https://github.com/user-attachments/assets/ad30eb25-839c-4beb-b783-0088cb81c145)
 
 4.  **Acompanhe:** A ferramenta listará as alterações que está fazendo (renomeando, atualizando conteúdo).
-7.  **Verifique:** Após a conclusão, abra o projeto no Visual Studio ou VS Code, verifique os nomes de arquivos, pastas, `.sln`, `.csproj` e o conteúdo de alguns arquivos `.cs` (namespaces, referências) para garantir que tudo foi alterado conforme esperado. Compile e teste o projeto.
+5.  **Verifique:** Após a conclusão, abra o projeto no Visual Studio ou VS Code, verifique os nomes de arquivos, pastas, `.sln`, `.csproj` e o conteúdo de alguns arquivos `.cs` (namespaces, referências) para garantir que tudo foi alterado conforme esperado. Compile e teste o projeto.
 
 ---
 *Fim do Guia*
