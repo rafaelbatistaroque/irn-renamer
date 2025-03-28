@@ -14,8 +14,8 @@ import (
 
 // Define command-line flags
 var (
-	oldName = flag.String("old", "", "The old name (current template name) to search for.")
-	newName = flag.String("new", "", "The new name (desired microservice name) to replace with.")
+	oldName = flag.String("old", "", "Antigo valor/nome que pretende substituir")
+	newName = flag.String("new", "", "Novo nome/valor que pretende usar")
 )
 
 // List of file extensions to process for content replacement
@@ -24,6 +24,15 @@ var processableExtensions = map[string]bool{
 	".csproj": true,
 	".cs":     true,
 	".json":   true,
+}
+
+var ignoredDirs = map[string]bool{
+	".git":         true,
+	".vscode":      true,
+	".idea":        true,
+	"bin":          true,
+	"obj":          true,
+	"node_modules": true,
 }
 
 // Struct to hold path information for sorting before rename (Pass 1 -> Pass 2)
@@ -66,28 +75,27 @@ func main() {
 
 	// --- Validation ---
 	if *oldName == "" || *newName == "" {
-		fmt.Println("Error: Both -old and -new flags are required.")
+		fmt.Println("ERRO: Os parámetros -old e -new são obrigatórios.")
 		flag.Usage()
 		os.Exit(1)
 	}
 	if *oldName == *newName {
-		fmt.Println("Error: -old and -new names cannot be the same.")
+		fmt.Println("ERRO: os valores de -old e -new são os mesmos.")
 		os.Exit(1)
 	}
 
 	rootDir, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Error getting current working directory: %v", err)
+		log.Fatalf("Erro ao obter diretório atual: %v", err)
 	}
 
-	fmt.Printf("Starting process in directory: %s\n", rootDir)
-	fmt.Printf("Replacing occurrences of '%s' with '%s'\n", *oldName, *newName)
+	fmt.Printf("Iniciando processo no diretório: %s\n", rootDir)
+	fmt.Printf("Substituir ocorrências de '%s' para '%s'\n", *oldName, *newName)
 
 	// --- !! BLOCO DE CONFIRMAÇÃO ADICIONADO !! ---
 	fmt.Println("\n------------------------------------ ATENÇÃO ------------------------------------")
-	fmt.Println("Este processo modifica arquivos, nomes de pastas e conteúdo DIRETAMENTE.")
-	fmt.Println("Garanta que você possui um BACKUP ou está usando controle de versão (Git)")
-	fmt.Println("antes de continuar. As alterações podem ser difíceis de reverter manualmente.")
+	fmt.Println("Este processo modificará ficheiros, nomes de pastas e conteúdo DIRETAMENTE.")
+	fmt.Println("Garanta que você possui um BACKUP ou está a usar um controle de versão (Git)")
 	fmt.Println("---------------------------------------------------------------------------------")
 	fmt.Print("Você tem certeza que deseja continuar? (Digite S ou Y para confirmar): ")
 
@@ -116,12 +124,21 @@ func main() {
 	}
 
 	// --- Pass 1: Update content and collect paths to rename ---
-	fmt.Println("\n--- Pass 1: Scanning files and updating content ---")
-
+	fmt.Println("\n--- Passo 1: Analizar ficheiros e substituir conteúdo ---")
+	renamedCount := 0
 	walkFunc := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Printf("Error accessing path %q: %v\n", path, err)
+			fmt.Printf("Erro ao acessar caminho %q: %v\n", path, err)
 			return err
+		}
+
+		// --- !! VERIFICAÇÃO PARA IGNORAR DIRETÓRIOS ADICIONADA !! ---
+		if d.IsDir() { // Verifica se é um diretório
+			dirName := d.Name()
+			if ignoredDirs[dirName] { // Verifica se o nome está no mapa de ignorados
+				// fmt.Printf("Skipping directory: %s\n", path) // Mensagem opcional de debug/info
+				return filepath.SkipDir // Instrução para NÃO entrar neste diretório
+			}
 		}
 
 		info, infoErr := d.Info() // Get FileInfo once
@@ -129,7 +146,7 @@ func main() {
 		// --- Collect paths for potential renaming (files and directories) ---
 		if strings.Contains(d.Name(), *oldName) {
 			if infoErr != nil {
-				fmt.Printf("Warning: Could not get FileInfo for %s, skipping potential rename tracking.\n", path)
+				fmt.Printf("ATENÇÃO: Não foi possível obter FileInfo para %s, ignorando análise e renomeação.\n", path)
 			} else {
 				pathsToRename = append(pathsToRename, PathInfo{Path: path, Info: info})
 			}
@@ -144,7 +161,7 @@ func main() {
 			if processThisFile {
 				contentBytes, readErr := os.ReadFile(path)
 				if readErr != nil {
-					fmt.Printf("Error reading file %s: %v\n", path, readErr)
+					fmt.Printf("Erro ao ler ficheiro %s: %v\n", path, readErr)
 					return nil // Continue walking
 				}
 				content := string(contentBytes)
@@ -152,12 +169,13 @@ func main() {
 				if strings.Contains(content, *oldName) {
 					newContent := strings.ReplaceAll(content, *oldName, *newName)
 					perm := fs.FileMode(0644)
+					renamedCount++
 					if infoErr == nil { // Use original permissions if info available
 						perm = info.Mode().Perm()
 					}
 					writeErr := os.WriteFile(path, []byte(newContent), perm)
 					if writeErr != nil {
-						fmt.Printf("Error writing updated content to file %s: %v\n", path, writeErr)
+						fmt.Printf("Erro ao atualizar conteúdo do ficheiro %s: %v\n", path, writeErr)
 						return writeErr
 					}
 
@@ -173,26 +191,25 @@ func main() {
 
 	err = filepath.WalkDir(rootDir, walkFunc)
 	if err != nil {
-		log.Printf("Warning: Directory walk completed with errors: %v", err)
+		log.Printf("ATENÇÃO: Análise de diretório com erros: %v", err)
 	}
-	fmt.Println("--- Pass 1 Complete ---")
+	fmt.Println("--- Passo 1: Completo ---")
 
 	// --- Pass 2: Rename files and folders ---
-	fmt.Println("\n--- Pass 2: Renaming files and directories ---")
+	fmt.Println("\n--- Passo 2: Renomear ficheiros e diretórios ---")
 
 	// Sort paths by length descending (basic strategy)
 	sort.Slice(pathsToRename, func(i, j int) bool {
 		return len(pathsToRename[i].Path) > len(pathsToRename[j].Path)
 	})
 
-	renamedCount := 0
 	for _, pathInfo := range pathsToRename {
 		oldPath := pathInfo.Path
 
 		if _, statErr := os.Stat(oldPath); os.IsNotExist(statErr) {
 			continue
 		} else if statErr != nil {
-			fmt.Printf("Error checking status of %s before rename: %v\n", oldPath, statErr)
+			fmt.Printf("Erro ao verificar status de %s antes de renomear: %v\n", oldPath, statErr)
 			continue
 		}
 
@@ -204,13 +221,13 @@ func main() {
 			newPath := filepath.Join(dir, newBaseName)
 
 			if _, statErr := os.Stat(newPath); statErr == nil {
-				fmt.Printf("Warning: Target path %s already exists. Skipping rename for %s.\n", newPath, oldPath)
+				fmt.Printf("ATENÇÃO: Diretório %s já existe. Ignorar renomeação para %s.\n", newPath, oldPath)
 				continue
 			}
 
 			renameErr := os.Rename(oldPath, newPath)
 			if renameErr != nil {
-				fmt.Printf("Error renaming %s to %s: %v\n", oldPath, newPath, renameErr)
+				fmt.Printf("Erro ao renomear %s para %s: %v\n", oldPath, newPath, renameErr)
 			} else {
 				// --- Store rename result under the correct category ---
 				isDir := pathInfo.Info.IsDir()                // Get IsDir from collected PathInfo
@@ -221,10 +238,10 @@ func main() {
 			}
 		}
 	}
-	fmt.Println("--- Pass 2 Complete ---")
+	fmt.Println("--- Passo 2: Completo ---")
 
 	// --- Final Report ---
-	fmt.Println("\n--- Summary of Changes by Type ---")
+	fmt.Print("\n--- Resumo por tipos:")
 
 	// Get and sort categories for consistent report order
 	categories := make([]string, 0, len(changesByType))
@@ -248,10 +265,10 @@ func main() {
 		hasContentUpdates := len(report.ContentUpdates) > 0
 
 		if hasRenames || hasContentUpdates {
-			fmt.Printf("\n--- Changes for %s ---\n", report.Category)
+			fmt.Printf("\n--- Tipo %s ---\n", report.Category)
 
 			if hasRenames {
-				fmt.Println("  Renamed:")
+				fmt.Println("  Renomeado:")
 				// Sort renames by old path for consistency? Optional.
 				sort.Slice(report.Renames, func(i, j int) bool {
 					return report.Renames[i].OldPath < report.Renames[j].OldPath
@@ -267,7 +284,7 @@ func main() {
 				if hasRenames {
 					fmt.Println() // Add a blank line for separation
 				}
-				fmt.Println("  Content Updated:")
+				fmt.Println("  Conteúdo Atualizado:")
 				sort.Strings(report.ContentUpdates) // Sort paths
 				for _, path := range report.ContentUpdates {
 					relativePath, err := filepath.Rel(rootDir, path)
@@ -280,8 +297,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("\n--- Process Complete ---\n")
-	fmt.Printf("Total items renamed: %d\n", renamedCount)
-	fmt.Println("Please review the changes carefully and test your project.")
-
+	fmt.Printf("\n--- Processo Finalizado ---\n")
+	fmt.Printf("Total de itens renomeados: %d\n", renamedCount)
+	fmt.Println("Por favor, revise as alterações com cuidado e teste seu projeto.")
 }
