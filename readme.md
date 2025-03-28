@@ -36,7 +36,7 @@ Esta pasta servirá como um local central para suas ferramentas de linha de coma
 3.  Clique com o botão direito do mouse numa área vazia, vá em `Novo` > `Pasta`.
 4.  Nomeie a pasta como **`tools`**.
 
-### 3.2. Mover e Renomear o Executável
+### 3.2. Mover o Executável
 
 1.  Localize o arquivo que você baixou (ex: `irn-renamer.exe`) na sua pasta `Downloads`.
 2.  **Mova** este arquivo para dentro da pasta `C:\tools`.
